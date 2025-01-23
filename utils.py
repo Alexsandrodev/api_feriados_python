@@ -49,7 +49,7 @@ def feriados_moveis(ano):
     return feriados.feriados
 
 
-def carregar_dados(arquivo_csv, ano):
+def carregar_dados(arquivo_csv):
     """
     Lê o arquivo CSV, linha a linha, e adiciona os dados no banco de dados,
     incluindo os feriados nacionais.
