@@ -8,7 +8,7 @@ from models import Municipio as ModelMunicipo
 
 from pydantic import BaseModel
 
-from utils import criar_banco, get_feriado_estado, get_feriado_municipio, append_feriado_estado, append_feriado_municipal
+import utils
 
 from models import Base
 
@@ -18,17 +18,19 @@ arquivo = "municipios-2019.csv"
 
 Base.metadata.create_all(engine)
 
+respose_criar_db = utils.criar_banco(arquivo)
+
+print(respose_criar_db)
+
 class Feriado(BaseModel):
     nome: str
 
 @app.get('/feriados/{codigo_ibge}/{ano}-{mes}-{dia}/')
 def get_feriados(codigo_ibge:str, ano:int, mes:str, dia:str):
     data = f"{mes}-{dia}"
-    respose_criar_db = criar_banco(arquivo)
 
-    print(respose_criar_db)
     if len(codigo_ibge) == 7:
-        feriado = get_feriado_municipio(codigo_ibge, data)
+        feriado = utils.get_feriado_municipio(codigo_ibge, data)
         if feriado:
             return feriado
         
@@ -36,7 +38,7 @@ def get_feriados(codigo_ibge:str, ano:int, mes:str, dia:str):
             raise HTTPException(status_code=404, detail='Feriado não encontrado')
         
     elif len(codigo_ibge) == 2:
-        feriado = get_feriado_estado(codigo_ibge, data)
+        feriado = utils.get_feriado_estado(codigo_ibge, data)
 
         if feriado:
             return feriado
@@ -55,7 +57,7 @@ def append_feriado(codigo_ibge: str, mes:str, dia:str, feriado: dict, response:R
 
     if len(codigo_ibge) == 2 :
 
-        feriado, response.status_code = append_feriado_estado(codigo_ibge, data, feriado)
+        feriado, response.status_code = utils.append_feriado_estado(codigo_ibge, data, feriado)
 
         if feriado:
             return response.status_code
@@ -64,7 +66,7 @@ def append_feriado(codigo_ibge: str, mes:str, dia:str, feriado: dict, response:R
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="estado não encontrado ")
 
     if len(codigo_ibge) == 7:
-        feriado, response.status_code = append_feriado_municipal(codigo_ibge, data, feriado)
+        feriado, response.status_code = utils.append_feriado_municipal(codigo_ibge, data, feriado)
 
         if feriado:
             return response.status_code
@@ -74,7 +76,21 @@ def append_feriado(codigo_ibge: str, mes:str, dia:str, feriado: dict, response:R
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Código Ibge invalido")
 
+
+@app.delete("/feriados/{codigo_ibge}/{mes}-{dia}/", status_code=status.HTTP_204_NO_CONTENT)
+def delete_feriado(codigo_ibge:str, mes:str, dia:str, response:Response):
+    data = f"{mes}-{dia}"
+
+    if len(codigo_ibge) == 2:
+        response.status_code = utils.delete_feriado_estadual(codigo_ibge, data)
+        return response.status_code
+
+    elif len(codigo_ibge) == 7:
+        response.status_code = utils.delete_feriado_municipal(codigo_ibge, data)
+        return response.status_code
+
+    else: 
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Código Ibge invalido")
+
 if __name__ == "__main__":
     uvicorn.run(app, port=8000)
-
-
