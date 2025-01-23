@@ -133,7 +133,6 @@ def get_feriado_municipio(codigo_ibge, data):
     
     feriados = estado.feriados_nacionais
 
-    print(feriados)
     return feriados.get(data)
 
 def get_feriado_estado(codigo_ibge, data):
@@ -186,6 +185,7 @@ def append_feriado_estado(codigo_ibge: str, data: str, feriado: dict):
     else:
         return estado
 
+
 def append_feriado_municipal(codigo_ibge: str, data: str, feriado:dict):
     municipio = sessionLocal.query(ModelMunicipo).filter_by(codigo_ibge=codigo_ibge).first()
 
@@ -209,3 +209,39 @@ def append_feriado_municipal(codigo_ibge: str, data: str, feriado:dict):
     
     else:
         return None,municipio
+    
+
+def delete_feriado_estadual(codigo_ibge:str, data:str):
+    estado = sessionLocal.query(ModelEstado).filter_by(codigo_ibge=codigo_ibge).first()
+
+    if estado:
+        if estado.feriados_estaduais.get(data):
+            del  estado.feriados_estaduais[data]
+
+            flag_modified(estado, "feriados_estaduais")
+            sessionLocal.commit()    
+            sessionLocal.close()    
+            return status.HTTP_204_NO_CONTENT
+        
+        else:
+            return status.HTTP_404_NOT_FOUND
+    else:
+        return status.HTTP_404_NOT_FOUND
+
+
+def delete_feriado_municipal(codigo_ibge:str, data:str):
+    municipio = sessionLocal.query(ModelMunicipo).filter_by(codigo_ibge=codigo_ibge).first()
+
+    if municipio:
+        if municipio.feriados_municipais.get(data):
+            del  municipio.feriados_municipais[data]
+
+            flag_modified(municipio, "feriados_municipais")
+            sessionLocal.commit()    
+            sessionLocal.close()    
+            return status.HTTP_204_NO_CONTENT
+        
+        else:
+            return status.HTTP_404_NOT_FOUND
+    else:
+        return status.HTTP_404_NOT_FOUND
