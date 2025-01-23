@@ -15,4 +15,3 @@ Criação de uma api de feriados estaduais e municipais, com ultilização do da
 1. Clone este repositório:
    ```bash
    git clone https://github.com/Alexsandrodev/api_feriados_python.git
->>>>>>> c31ca32 (feat(readme): arquivo readme do meu projeto)
