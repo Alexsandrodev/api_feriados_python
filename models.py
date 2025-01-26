@@ -38,3 +38,4 @@ class Municipio(Base):
     nome = Column(String)
     estado_id = Column(String(2), ForeignKey("estados.codigo_ibge"))
     feriados_municipais = Column(JSON)
+    feriados_moveis = Column(JSON)
