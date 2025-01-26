@@ -80,8 +80,8 @@ class FeriadosMoveis:
 
         feriados[self.pascoa] = { "name" : "Pascoa"}
         feriados[self.calcular_feriado(-47)] = { "name" : "Carnaval"}
-        feriados[self.calcular_feriado(60)] = { "name" : "Corpos Cristi"}
-        feriados[self.calcular_feriado(-2)] = { "name" : "Sexta Feira Santa"}
+        feriados[self.calcular_feriado(60)] = { "name" : "Corpus Christi"}
+        feriados[self.calcular_feriado(-2)] = { "name" : "Sexta-Feira Santa"}
 
         return feriados
     
