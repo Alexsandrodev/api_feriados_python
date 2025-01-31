@@ -1,10 +1,14 @@
 import uvicorn
 from fastapi import FastAPI, HTTPException, status, Response, Body
-from database import engine
+from db.database import engine
+import db.startup as startup
+import services.estadoService as estadoService
+import services.municipioService as municipioService
+import services.feriadoMovel as feriadoMovel
 
-import utils
+import utils.utils as utils
 
-from models import Base
+from db.models import Base
 
 app = FastAPI()
 
@@ -12,12 +16,12 @@ arquivo = "municipios-2019.csv"
 
 Base.metadata.create_all(engine)
 
-respose_criar_db = utils.criar_banco(arquivo)
+respose_criar_db = startup.criar_banco(arquivo)
 
 print(respose_criar_db)
 
 @app.get('/feriados/{codigo_ibge}/{data}/')
-def get_feriados(codigo_ibge:str, data :str):
+def getFeriados(codigo_ibge:str, data :str):
     try:
         ano, date = utils.validar_data(data)
     except:
@@ -25,7 +29,8 @@ def get_feriados(codigo_ibge:str, data :str):
 
 
     if len(codigo_ibge) == 7:
-        feriado = utils.get_feriado_municipio(codigo_ibge=codigo_ibge, ano=ano, data=date)
+        print(codigo_ibge, ano, date)
+        feriado = municipioService.getFeriadoMunicipial(codigo_ibge,ano=ano, data=date)
         if feriado:
             return feriado
         
@@ -33,7 +38,7 @@ def get_feriados(codigo_ibge:str, data :str):
             raise HTTPException(status_code=404, detail='Feriado não encontrado')
         
     elif len(codigo_ibge) == 2:
-        feriado = utils.get_feriado_estado(codigo_ibge, data=date)
+        feriado = estadoService.getFeriadoEstado(codigo_ibge=codigo_ibge, ano=ano, data=date)
 
         if feriado:
             
@@ -48,8 +53,7 @@ def get_feriados(codigo_ibge:str, data :str):
 
 
 @app.put("/feriados/{codigo_ibge}/{data}/", status_code=status.HTTP_201_CREATED)
-def append_feriado(codigo_ibge: str, data: str, response: Response, feriado: dict | None = Body(default=None)):
-    print(feriado)
+def appendFeriado(codigo_ibge: str, data: str, response: Response, feriado: dict | None = Body(default=None)):
     if feriado:  
         if "name" not in feriado:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Campo 'name' é obrigatório")
@@ -60,14 +64,14 @@ def append_feriado(codigo_ibge: str, data: str, response: Response, feriado: dic
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Data inválida")
 
         if len(codigo_ibge) == 2:
-            feriado, response.status_code = utils.append_feriado_estado(codigo_ibge, date, feriado)
+            feriado, response.status_code = estadoService.appendFeriadoEstado(codigo_ibge, date, feriado)
             if feriado:
                 return response.status_code
             else:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Estado não encontrado")
 
         elif len(codigo_ibge) == 7:
-            feriado, response.status_code = utils.append_feriado_municipal(codigo_ibge, date, feriado)
+            feriado, response.status_code = municipioService.appendFeriadoMunicipal(codigo_ibge, date, feriado)
             if feriado:
                 return response.status_code
             else:
@@ -82,24 +86,33 @@ def append_feriado(codigo_ibge: str, data: str, response: Response, feriado: dic
         except Exception:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Feriado móvel inválido")
 
-        response.status_code = utils.criate_feriado_movel(codigo_ibge, feriado_movel)
+        response.status_code = feriadoMovel.criateFeriadoMovel(codigo_ibge, feriado_movel)
         return response.status_code
         
 
 
 
 @app.delete("/feriados/{codigo_ibge}/{data}/", status_code=status.HTTP_204_NO_CONTENT)
-def delete_feriado(codigo_ibge:str, data:str, response:Response):
+def deleteFeriado(codigo_ibge:str, data:str, response:Response):
     feriado_movel = data
     ano, data = utils.validar_data(data)
 
     if ano == None and data == None:
         feriado_movel = utils.formated_feriado_name(feriado_movel)
-        response.status_code = utils.remove_feriado_movel(codigo_ibge, feriado_movel)
+        response.status_code = feriadoMovel.removeFeriadoMovel(codigo_ibge, feriado_movel)
         return response.status_code
-        
-    response.status_code = utils.delete_feriado_by_id(codigo_ibge, data)
-    return response.status_code
+    
+    if len(codigo_ibge) == 7:
+        response.status_code = municipioService.deleteFeriadoMunicipal(codigo_ibge, data)
+        return response.status_code
+    
+    elif len(codigo_ibge) == 2:
+        print('entrei aqui')
+        response.status_code = estadoService.deleteFeriadosEstaduais(codigo_ibge, data)
+        return response.status_code
+    
+    else:
+        return HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Código ibge inválido")
 
 
 

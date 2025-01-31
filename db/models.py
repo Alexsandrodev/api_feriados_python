@@ -19,6 +19,7 @@ class Estado(Base):
     codigo_ibge = Column(String(2), primary_key=True)
     feriados_nacionais = Column(JSON)
     feriados_estaduais = Column(JSON)
+    movel_estadual = Column(String)
     municipios = relationship("Municipio", backref='estado')
    
 
